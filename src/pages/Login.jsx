@@ -4,6 +4,7 @@ import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Form } from "@heroui/form";
 import { Button } from "@heroui/button";
+import { addToast } from "@heroui/toast";
 
 function Login() {
   const navigate = useNavigate();
@@ -12,10 +13,22 @@ function Login() {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
 
-    const res = await API.post("/auth/login", data);
-
-    localStorage.setItem("token", res.data.token);
-    navigate("/dashboard");
+    try {
+      const res = await API.post("/auth/login", data);
+      localStorage.setItem("token", res.data.token);
+      addToast({
+        title: "Login Success",
+        description: "Login successful.",
+        color: "success",
+      });
+      navigate("/dashboard");
+    } catch (error) {
+      addToast({
+        title: "Login Failed",
+        description: error.response?.data?.message || "Login failed. Please try again.",
+        color: "danger",
+      });
+    }
   };
 
   return (

@@ -5,6 +5,8 @@ import { Card, CardBody } from "@heroui/card";
 import { Input } from "@heroui/input";
 import { Form } from "@heroui/form";
 import { Button } from "@heroui/button";
+import { addToast } from "@heroui/toast";
+
 
 function Register() {
   const navigate = useNavigate();
@@ -20,9 +22,22 @@ function Register() {
     e.preventDefault();
     const data = Object.fromEntries(new FormData(e.currentTarget));
 
-    await API.post("/auth/register", data);
-    
-    navigate("/");
+    try {
+      await API.post("/auth/register", data);
+      addToast({
+        title: "Register Success",
+        description: "You have registered successfully. Please login.",
+        color: "success",
+      });
+      navigate("/");
+    } catch (error) {
+      addToast({
+        title: "Register Failed",
+        description:
+          error.response?.data?.message || "Register failed. Please try again.",
+        color: "danger",
+      });
+    }
   };
 
   return (

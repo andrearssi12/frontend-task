@@ -20,6 +20,7 @@ import {
   ModalBody,
   useDisclosure,
 } from "@heroui/modal";
+import { addToast } from "@heroui/toast";
 
 function Dashboard() {
   const [tasks, setTasks] = useState([]);
@@ -27,7 +28,11 @@ function Dashboard() {
   const [now, setNow] = useState(new Date());
   const [proofTaskId, setProofTaskId] = useState(null);
   const [proof, setProof] = useState("");
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    isOpen: isAddOpen,
+    onOpen: onAddOpen,
+    onOpenChange: onAddChange,
+  } = useDisclosure();
   const {
     isOpen: isProofOpen,
     onOpen: onProofOpen,
@@ -36,8 +41,16 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const fetchTasks = async () => {
-    const res = await API.get("/tasks");
-    setTasks(res.data);
+    try {
+      const res = await API.get("/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      addToast({
+        title: "Fetch Tasks Failed",
+        description: error.response?.data?.message || "Failed to fetch tasks.",
+        color: "danger",
+      });
+    }
   };
 
   useEffect(() => {
@@ -50,14 +63,41 @@ function Dashboard() {
   }, []);
 
   const addTask = async () => {
-    await API.post("/tasks", { title });
+    try {
+      await API.post("/tasks", { title });
+      addToast({
+        title: "Add Task Success",
+        description: "Task added successfully.",
+        color: "success",
+      });
+    } catch (error) {
+      addToast({
+        title: "Add Task Failed",
+        description: error.response?.data?.message || "Failed to add task.",
+        color: "danger",
+      });
+    }
+
     setTitle("");
     fetchTasks();
   };
 
   const startTask = async (id) => {
-    await API.put(`/tasks/${id}/start`);
-    fetchTasks();
+    try {
+      await API.put(`/tasks/${id}/start`);
+      addToast({
+        title: "Start Task Success",
+        description: "Task started successfully.",
+        color: "success",
+      });
+      fetchTasks();
+    } catch (error) {
+      addToast({
+        title: "Start Task Failed",
+        description: error.response?.data?.message || "Failed to start task.",
+        color: "danger",
+      });
+    }
   };
 
   const handleEndClick = (taskId) => {
@@ -67,9 +107,17 @@ function Dashboard() {
   };
 
   const submitProof = async () => {
-    await API.put(`/tasks/${proofTaskId}/end`, { proof });
-    onProofChange(false);
-    fetchTasks();
+    try {
+      await API.put(`/tasks/${proofTaskId}/end`, { proof });
+      onProofChange(false);
+      fetchTasks();
+    } catch (error) {
+      addToast({
+        title: "End Task Failed",
+        description: error.response?.data?.message || "Failed to end task.",
+        color: "danger",
+      });
+    }
   };
 
   const logout = () => {
@@ -122,39 +170,9 @@ function Dashboard() {
         <Button color="danger" onPress={logout}>
           Logout
         </Button>
-        <Button onPress={onOpen} color="primary">
+        <Button onPress={onAddOpen} color="primary">
           Add Task
         </Button>
-
-        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-          <ModalContent>
-            {(onClose) => (
-              <>
-                <ModalHeader>Add new task</ModalHeader>
-                <ModalBody>
-                  <Form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      addTask();
-                      onClose();
-                    }}
-                    className="flex flex-col gap-4"
-                  >
-                    <Input
-                      isRequired
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
-                      placeholder="Task title"
-                    />
-                    <Button type="submit" color="primary" className="mx-auto">
-                      Submit
-                    </Button>
-                  </Form>
-                </ModalBody>
-              </>
-            )}
-          </ModalContent>
-        </Modal>
       </div>
 
       <Card>
@@ -218,6 +236,36 @@ function Dashboard() {
           </Table>
         </CardBody>
       </Card>
+
+      <Modal isOpen={isAddOpen} onOpenChange={onAddChange}>
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader>Add new task</ModalHeader>
+              <ModalBody>
+                <Form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    addTask();
+                    onClose();
+                  }}
+                  className="flex flex-col gap-4"
+                >
+                  <Input
+                    isRequired
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Task title"
+                  />
+                  <Button type="submit" color="primary" className="mx-auto">
+                    Submit
+                  </Button>
+                </Form>
+              </ModalBody>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
 
       <Modal isOpen={isProofOpen} onOpenChange={onProofChange}>
         <ModalContent>
